@@ -6,9 +6,9 @@ while running:
    running, frame=cam.read()
    if running:
        cv2.imshow('frame',frame)
-   if cv2.waitKey(1) & 0xFF == 27:
+   if cv2.waitKey(1) & 0xFF == 27: # ESC key
        running = False
    else:
-       print 'error reading video feed'
+       printasdf 'error reading video feed'
 cam.release()
 cv2.destroyAllWindows()
