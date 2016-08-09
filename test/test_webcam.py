@@ -10,7 +10,8 @@ delay_time = int(40)  # [ms]
 image_shape = drone.image_shape  # (720, 1280, 3)
 img = np.ones([image_shape[0], image_shape[1], image_shape[2]]) * 200 / 255.0
 
-while True:
+running = True
+while running:
     cv.imshow(drone_feed_window, img)
 
     # Select action
