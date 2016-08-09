@@ -3,12 +3,13 @@ import libardrone.libardrone as lib_drone
 import numpy as np
 import asci_keys as keys
 import time
+import os
 
 drone = lib_drone.ARDrone(True)
 delay_time = int(40)  # [ms]
-
+img_manuals = cv.imread(os.path.join("..", "media", "commands.png"))
 running = True
-
+cv.imshow("Control window", img_manuals)
 flying = False
 
 while running:
