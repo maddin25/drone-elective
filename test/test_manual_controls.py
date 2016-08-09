@@ -34,14 +34,20 @@ while running:
     elif key in [keys.space]:
         if not flying:
             drone.takeoff()
+            flying = True
         else:
             drone.land()
+            flying = False
     elif key in [keys.backspace]:
         if not flying:
             drone.halt()
         else:
             drone.land()
+            flying = False
             time.sleep(8)
             drone.halt()
+        break
+    elif key is keys.esc:
+        break
 
 drone.halt()
