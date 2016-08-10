@@ -1,5 +1,6 @@
 import libardrone.libardrone as lib_drone
 import asci_keys as keys
+import time
 
 class DroneController:
     flying = False
