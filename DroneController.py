@@ -8,26 +8,29 @@ import os
 
 class DroneController:
     flying = False
-    loop_running = False
+    loop_running = True
     drone_feed_window = "Drone feed"
     cycle_time = int(40)  # [ms]
     drone = None
     img_numpy = None
     nr_cycles_no_key_pressed = 0
+    view_front_camera = True
 
     def __init__(self):
         self.drone = lib_drone.ARDrone2()
         image_shape = self.drone.image_shape  # (720, 1280, 3)
         self.img_numpy = np.ones([image_shape[0], image_shape[1], image_shape[2]]) * 200 / 255.0
         img_manuals = cv.imread(os.path.join("media", "commands.png"))
-        cv.imshow(self.drone_feed_window, img_manuals)
+        cv.imshow("Commands", img_manuals)
+        cv.waitKey(1)
+        print "Drone initialized"
+        self.start_main_loop()
 
     def start_main_loop(self):
         print "Main loop started"
-        print "Cycle time: " + str(self.cycle_time)
         while self.loop_running:
             key = cv.waitKey(self.cycle_time)
-            self.handle_key_stroke(key)
+            self.loop_running = self.handle_key_stroke(key)
             self.update_video()
 
     def set_cycle_time(self, new_cycle_time):
@@ -45,36 +48,36 @@ class DroneController:
             self.drone.move_backward()
         elif key in [keys.i, keys.I]:
             self.drone.move_up()
-        elif key in [keys.m, keys.M]:
+        elif key in [keys.k, keys.K]:
             self.drone.move_down()
         elif key in [keys.j, keys.J]:
             self.drone.turn_left()
         elif key in [keys.k, keys.K]:
             self.drone.turn_right()
+        elif key in [keys.v, keys.V]:
+            self.view_front_camera = not self.view_front_camera
+            self.drone.set_camera_view(self.view_front_camera)
         elif key in [keys.space]:
             if not self.flying:
                 self.take_off()
             else:
-                self.landing()
+                self.land()
         elif key in [keys.backspace, keys.esc]:
             if not self.flying:
                 self.drone.halt()
             else:
-                self.landing()
-                time.sleep(8)
-                self.drone.halt()
-            return True
-        elif key is keys.esc:
-            return True
-        else:
+                self.land()
+            return False
+        elif self.flying:
             self.nr_cycles_no_key_pressed += 1
 
-        if self.nr_cycles_no_key_pressed * self.cycle_time >= 500:
+        if self.nr_cycles_no_key_pressed * self.cycle_time >= 300:
             self.drone.hover()
             self.nr_cycles_no_key_pressed = 0
-        return False
 
-    def landing(self):
+        return True
+
+    def land(self):
         self.drone.land()
         self.flying = False
 
