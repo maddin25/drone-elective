@@ -3,6 +3,8 @@ import asci_keys as keys
 import time
 import numpy as np
 import cv2 as cv
+import os
+
 
 class DroneController:
     flying = False
@@ -11,16 +13,22 @@ class DroneController:
     cycle_time = int(40)  # [ms]
     drone = None
     img_numpy = None
+    nr_cycles_no_key_pressed = 0
 
     def __init__(self):
         self.drone = lib_drone.ARDrone2()
         image_shape = self.drone.image_shape  # (720, 1280, 3)
         self.img_numpy = np.ones([image_shape[0], image_shape[1], image_shape[2]]) * 200 / 255.0
+        img_manuals = cv.imread(os.path.join("media", "commands.png"))
+        cv.imshow(self.drone_feed_window, img_manuals)
 
     def start_main_loop(self):
         print "Main loop started"
-        print self.drone_feed_window
         print "Cycle time: " + str(self.cycle_time)
+        while self.loop_running:
+            key = cv.waitKey(self.cycle_time)
+            self.handle_key_stroke(key)
+            self.update_video()
 
     def set_cycle_time(self, new_cycle_time):
         assert new_cycle_time > 0
@@ -48,7 +56,7 @@ class DroneController:
                 self.take_off()
             else:
                 self.landing()
-        elif key in [keys.backspace]:
+        elif key in [keys.backspace, keys.esc]:
             if not self.flying:
                 self.drone.halt()
             else:
@@ -58,6 +66,12 @@ class DroneController:
             return True
         elif key is keys.esc:
             return True
+        else:
+            self.nr_cycles_no_key_pressed += 1
+
+        if self.nr_cycles_no_key_pressed * self.cycle_time >= 500:
+            self.drone.hover()
+            self.nr_cycles_no_key_pressed = 0
         return False
 
     def landing(self):
@@ -73,4 +87,3 @@ class DroneController:
         img_cv = cv.cvtColor(self.img_numpy, cv.COLOR_BGR2RGB)
         cv.imshow(self.drone_feed_window, img_cv)
 
-        
