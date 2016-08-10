@@ -1,6 +1,8 @@
 import libardrone.libardrone as lib_drone
 import asci_keys as keys
 import time
+import numpy as np
+import cv2 as cv
 
 class DroneController:
     flying = False
@@ -8,9 +10,12 @@ class DroneController:
     drone_feed_window = "Drone feed"
     cycle_time = int(40)  # [ms]
     drone = None
+    img_numpy = None
 
     def __init__(self):
         self.drone = lib_drone.ARDrone2()
+        image_shape = self.drone.image_shape  # (720, 1280, 3)
+        self.img_numpy = np.ones([image_shape[0], image_shape[1], image_shape[2]]) * 200 / 255.0
 
     def start_main_loop(self):
         print "Main loop started"
@@ -62,4 +67,10 @@ class DroneController:
     def take_off(self):
         self.drone.takeoff()
         self.flying = True
+
+    def update_video(self):
+        self.img_numpy = self.drone.get_image()
+        img_cv = cv.cvtColor(self.img_numpy, cv.COLOR_BGR2RGB)
+        cv.imshow(self.drone_feed_window, img_cv)
+
         
