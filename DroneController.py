@@ -10,7 +10,7 @@ class DroneController:
     drone = None
 
     def __init__(self):
-        drone = lib_drone.ARDrone2()
+        self.drone = lib_drone.ARDrone2()
 
     def start_main_loop(self):
         print "Main loop started"
