@@ -16,6 +16,7 @@ class DroneController:
     nr_cycles_no_key_pressed = 0
     view_front_camera = True
     turn = 0
+    automatic_mode = False
 
     def __init__(self):
         self.drone = lib_drone.ARDrone2(hd=True)
@@ -66,6 +67,15 @@ class DroneController:
                 # emergency
                 elif event.key in [pygame.K_BACKSPACE, pygame.K_ESCAPE]:
                     self.drone.reset()
+                # activate program modes
+                elif event.key == pygame.K_t:
+                    self.automatic_mode = not self.automatic_mode
+                # video
+                elif event.key == pygame.K_v:
+                    self.view_front_camera = not self.view_front_camera
+                    self.drone.set_camera_view(self.view_front_camera)
+                elif self.automatic_mode:
+                    continue
                 # forward / backward
                 elif event.key == pygame.K_w:
                     self.drone.move_forward()
@@ -109,15 +119,11 @@ class DroneController:
                     self.drone.speed = 0.9
                 elif event.key == pygame.K_0:
                     self.drone.speed = 1.0
-                # video
-                elif event.key == pygame.K_v:
-                    self.view_front_camera = not self.view_front_camera
-                    self.drone.set_camera_view(self.view_front_camera)
         # After parsing the input events
-        if self.turn > 0:
+        if self.turn > 0 and not self.automatic_mode:
             print "Continue rotating left"
             self.drone.turn_left()
-        elif self.turn < 0:
+        elif self.turn < 0 and not self.automatic_mode:
             print "Continue rotating right"
             self.drone.turn_right()
 
