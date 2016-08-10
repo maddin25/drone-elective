@@ -40,8 +40,7 @@ class DroneController:
             self.drone.turn_right()
         elif key in [keys.space]:
             if not self.flying:
-                self.drone.takeoff()
-                self.flying = True
+                self.take_off()
             else:
                 self.landing()
         elif key in [keys.backspace]:
@@ -59,3 +58,8 @@ class DroneController:
     def landing(self):
         self.drone.land()
         self.flying = False
+
+    def take_off(self):
+        self.drone.takeoff()
+        self.flying = True
+        
