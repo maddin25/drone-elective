@@ -7,3 +7,6 @@
 [submodule "lib/kokimarker"]
 	path = lib/kokimarker
 	url = git://srobo.org/kokimarker.git
+[submodule "lib/python-aruco"]
+	path = lib/python-aruco
+	url = https://github.com/fehlfarbe/python-aruco.git
