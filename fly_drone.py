@@ -1,6 +1,6 @@
-import DroneController
+from DroneController import *
 
-our_drone = DroneController.DroneController()
+our_drone = DroneController()
 
 
 
