@@ -18,7 +18,10 @@ class DroneController:
     turn = 0
     automatic_mode = False
 
-    def __init__(self):
+    def __init__(self, use_webcam=False):
+        self.use_webcam = use_webcam
+        if self.use_webcam:
+            self.cam = cv.VideoCapture(0)
         self.drone = lib_drone.ARDrone2(hd=True)
         self.drone.set_camera_view(True)
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
@@ -39,7 +42,12 @@ class DroneController:
         print "Main loop started"
         while self.loop_running:
             self.handle_key_stroke()
-            self.update_video()
+            if not self.use_webcam:
+                self.update_video_from_drone()
+            else:
+                self.update_video_from_webcam()
+            self.analyze_image()
+
         self.drone.halt()
 
     def set_cycle_time(self, new_cycle_time):
@@ -127,6 +135,10 @@ class DroneController:
             print "Continue rotating right"
             self.drone.turn_right()
 
+    def analyze_image(self):
+        pass
+
+
     def land(self):
         self.drone.land()
         self.flying = False
@@ -135,15 +147,21 @@ class DroneController:
         self.drone.takeoff()
         self.flying = True
 
-    def update_video(self):
+    def update_video_from_drone(self):
         self.img_numpy = self.drone.get_image()  # (360, 640, 3) or (720, 1280, 3)
         # print "Received image with dimensions ", self.img_numpy.shape
         # print "Min, max values:", np.amin(self.img_numpy), np.amax(self.img_numpy)
-        surface = pygame.surfarray.make_surface(self.img_numpy)
-        surface = pygame.transform.rotate(surface, -90)
+        self.show_np_array(self.img_numpy, -90)
+
+    def update_video_from_webcam(self):
+        ret, frame = self.cam.read()
+        frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+        self.img_numpy = np.asarray(frame)
+        self.show_np_array(self.img_numpy, -90)
+
+    def show_np_array(self, array, rotate=0):
+        surface = pygame.surfarray.make_surface(array)
+        surface = pygame.transform.rotate(surface, rotate)
         # print "Surface size: ", surface.get_size()
         self.screen.blit(surface, (0, 0))
-
         pygame.display.flip()
-        # img_cv = cv.cvtColor(self.img_numpy, cv.COLOR_BGR2RGB)
-
