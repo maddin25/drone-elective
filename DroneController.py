@@ -43,14 +43,12 @@ class DroneController:
                 self.drone.takeoff()
                 self.flying = True
             else:
-                self.drone.land()
-                self.flying = False
+                self.landing()
         elif key in [keys.backspace]:
             if not self.flying:
                 self.drone.halt()
             else:
-                self.drone.land()
-                self.flying = False
+                self.landing()
                 time.sleep(8)
                 self.drone.halt()
             return True
@@ -58,3 +56,6 @@ class DroneController:
             return True
         return False
 
+    def landing(self):
+        self.drone.land()
+        self.flying = False
