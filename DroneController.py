@@ -35,9 +35,8 @@ class DroneController:
         # Initialize pygame
         pygame.init()
         self.image_shape = self.drone.image_shape  # (720, 1280, 3) = (height, width, color_depth)
-        self.img_cv = np.array([1], ndmin=3)
+        self.img = np.array([1], ndmin=3)
         self.screen = pygame.display.set_mode((self.image_shape[1], self.image_shape[0]))  # width, height
-        self.img_numpy = np.zeros([self.image_shape[0], self.image_shape[1], self.image_shape[2]])
         self.img_manuals = pygame.image.load(os.path.join("media", "commands.png")).convert()
         self.screen.blit(self.img_manuals, (0, 0))
         pygame.display.flip()
@@ -146,19 +145,16 @@ class DroneController:
             self.drone.turn_right()
 
     def analyze_image(self):
-        gray = cv.cvtColor(self.img_cv, cv.COLOR_RGB2GRAY)
+        gray = cv.cvtColor(self.img, cv.COLOR_RGB2GRAY)
         corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, self.aruco_dict, parameters=self.parameters)
         if corners:
             self.corners = corners
             dim = corners[0][0].shape
             c = np.sum(corners[0][0], axis=0) / dim[0]
             self.center = (c[0], c[1])
-            print "Aruco marker found"
         else:
             self.corners = None
             self.center = None
-            print "No Aruco marker found"
-
 
     def highlight_marker(self):
         pass
@@ -172,24 +168,19 @@ class DroneController:
         self.flying = True
 
     def update_video_from_drone(self):
-        self.img_numpy = self.drone.get_image()  # (360, 640, 3) or (720, 1280, 3)
-        self.img_cv = cv.cvtColor(self.img_numpy, cv.COLOR_BGR2RGB)
+        self.img = self.drone.get_image()  # (360, 640, 3) or (720, 1280, 3)
         self.plot_analysis_result()
-        # print "Received image with dimensions ", self.img_numpy.shape
-        # print "Min, max values:", np.amin(self.img_numpy), np.amax(self.img_numpy)
-        self.show_np_array(self.img_numpy, -90)
+        self.show_np_array(self.img, -90)
 
     def update_video_from_webcam(self):
-        ret, self.img_cv = self.cam.read()
-        self.img_cv = cv.cvtColor(self.img_cv, cv.COLOR_BGR2RGB)
+        ret, self.img = self.cam.read()
+        self.img = cv.cvtColor(self.img, cv.COLOR_BGR2RGB)
         self.plot_analysis_result()
-        self.img_numpy = np.asarray(self.img_cv)  # TODO: check, if this is needed
-        self.show_np_array(self.img_numpy, -90)
+        self.show_np_array(self.img, -90)
 
     def show_np_array(self, array, rotate=0):
         surface = pygame.surfarray.make_surface(array)
         surface = pygame.transform.rotate(surface, rotate)
-        # print "Surface size: ", surface.get_size()
         self.screen.blit(surface, (0, 0))
         pygame.display.flip()
 
@@ -198,5 +189,5 @@ class DroneController:
 
     def plot_analysis_result(self):
         if self.corners is not None:
-            self.img_cv = aruco.drawDetectedMarkers(self.img_cv, self.corners)
-            cv.circle(self.img_cv, self.center, 2, (0, 0, 255), 2)
+            self.img = aruco.drawDetectedMarkers(self.img, self.corners)
+            cv.circle(self.img, self.center, 2, (0, 0, 255), 2)
