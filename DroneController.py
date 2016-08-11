@@ -225,23 +225,31 @@ class DroneController:
         pygame.display.flip()
 
     def pid_controller(self, marker_center, height, marker_size, dt):
-        err_x = marker_center[0] / self.image_shape[1] - 0.5
         err_height = height - self.ref_height
-        err_distance = marker_size - self.ref_marker_size
+        self.integral["err_height"] += err_height / 40
+
+        if self.corners is not None:
+            err_x = marker_center[0] / self.image_shape[1] - 0.5
+            err_distance = marker_size - self.ref_marker_size
+            self.integral["err_x"] += err_x
+            self.integral["err_distance"] += err_distance
+        else:
+            err_x = 0
+            err_distance = 0
+            self.integral["err_x"] *= 0.9
+            self.integral["err_distance"] *= 0.9
+
         # Calculate the integral parts
-        self.integral["err_x"] += err_x
-        self.integral["err_height"] += err_height
-        self.integral["err_distance"] += err_distance
         # Calculate new control values
-        self.control["x"] = self.K["P"] * err_x \
+        self.control["x"] = self.K["P"] / 2 * err_x \
                           + self.K["I"] * self.integral["err_x"] \
                           + self.K["D"] * (err_x - self.last["err_x"])
         self.control["height"] = self.K["P"] * err_height \
-                            + self.K["I"] * self.integral["err_height"] \
-                            + self.K["D"] * (err_height - self.last["err_height"])
+                               + self.K["I"] * self.integral["err_height"] \
+                               + self.K["D"] * (err_height - self.last["err_height"])
         self.control["distance"] = self.K["P"] * err_distance \
-                            + self.K["I"] * self.integral["err_distance"] \
-                            + self.K["D"] * (err_distance - self.last["err_distance"])
+                                 + self.K["I"] * self.integral["err_distance"] \
+                                 + self.K["D"] * (err_distance - self.last["err_distance"])
         # Save values for the next iteration
         self.last["err_x"] = err_x
         self.last["err_height"] = err_height
