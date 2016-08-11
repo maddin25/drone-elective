@@ -91,51 +91,61 @@ class DroneController:
             if event.type == pygame.QUIT:
                 self.loop_running = False
                 self.drone.halt()
-            elif event.type == pygame.KEYUP:
+            elif event.type == pygame.KEYUP and not self.automatic_mode:
                 self.drone.hover()
             elif event.type == pygame.KEYDOWN:
-                self.turn = 0
+                if event.key not in [pygame.K_RIGHT, pygame.K_LEFT]:
+                    self.turn = 0
                 if event.key in [pygame.K_BACKSPACE, pygame.K_ESCAPE]:
                     self.drone.halt()
                     self.loop_running = False
                 # takeoff / land
                 elif event.key == pygame.K_RETURN:
-                    print("return")
+                    print("Return pressed, taking off")
                     self.drone.takeoff()
                 elif event.key == pygame.K_SPACE:
-                    print("space")
+                    print("Space pressed, landing")
                     self.drone.land()
                 elif event.key == pygame.K_r:
                     self.drone.reset()
                 # activate program modes
                 elif event.key == pygame.K_t:
                     self.automatic_mode = not self.automatic_mode
+                    print "Automatic mode enabled:", self.automatic_mode
+                elif self.automatic_mode:
+                    continue
                 # video
                 elif event.key == pygame.K_v:
                     self.view_front_camera = not self.view_front_camera
                     self.drone.set_camera_view(self.view_front_camera)
-                elif self.automatic_mode:
-                    continue
                 # forward / backward
                 elif event.key == pygame.K_w:
+                    print "Move forward"
                     self.drone.move_forward()
                 elif event.key == pygame.K_s:
+                    print "Move backward"
                     self.drone.move_backward()
                 # left / right
                 elif event.key == pygame.K_a:
+                    print "Move left"
                     self.drone.move_left()
                 elif event.key == pygame.K_d:
+                    print "Move right"
                     self.drone.move_right()
                 # up / down
                 elif event.key == pygame.K_UP:
+                    print "Move up"
                     self.drone.move_up()
                 elif event.key == pygame.K_DOWN:
+                    print "Move down"
                     self.drone.move_down()
                 # turn left / turn right
                 elif event.key == pygame.K_LEFT:
+                    print "Turn left"
                     self.drone.turn_left()
                     self.turn = +1
                 elif event.key == pygame.K_RIGHT:
+                    print "Turn right"
                     self.drone.turn_right()
                     self.turn = -1
                 # speed
