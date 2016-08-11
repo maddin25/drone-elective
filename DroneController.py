@@ -5,6 +5,7 @@ import numpy as np
 import cv2 as cv
 import cv2.aruco as aruco
 import os
+import math
 import pygame
 import pygame.surfarray
 
@@ -28,6 +29,10 @@ class DroneController:
         self.drone = lib_drone.ARDrone2(hd=True)
         time.sleep(1)
         self.time = time.time()
+        self.integral = {"err_x": 0, "err_height": 0, "err_distance": 0}
+        self.last = {"err_x": 0, "err_height": 0, "err_distance": 0}
+        self.control = {"x": 0, "height": 0, "distance": 0}
+        self.K = {"P": 1, "I": 1, "D": 1}
         self.ref_height = 800  # [mm]
         self.height = 0  # [mm]
         self.drone.set_camera_view(True)
@@ -196,8 +201,28 @@ class DroneController:
         self.screen.blit(surface, (0, 0))
         pygame.display.flip()
 
-    def pid_controller(self, pos, dt):
-        pos = (0, 0)
+    def pid_controller(self, marker_center, height, marker_size, dt):
+        err_x = marker_center[0] / self.image_shape[1] - 0.5
+        err_height = height - self.ref_height
+        err_distance = marker_size - self.ref_marker_size
+        # Calculate the integral parts
+        self.integral["err_x"] += err_x
+        self.integral["err_height"] += err_height
+        self.integral["err_distance"] += err_distance
+        # Calculate new control values
+        self.control["x"] = self.K["P"] * err_x \
+                          + self.K["I"] * self.integral["err_x"] \
+                          + self.K["D"] * (err_x - self.last["err_x"])
+        self.control["height"] = self.K["P"] * err_height \
+                            + self.K["I"] * self.integral["err_height"] \
+                            + self.K["D"] * (err_height - self.last["err_height"])
+        self.control["distance"] = self.K["P"] * err_distance \
+                            + self.K["I"] * self.integral["err_distance"] \
+                            + self.K["D"] * (err_distance - self.last["err_distance"])
+        # Save values for the next iteration
+        self.last["err_x"] = err_x
+        self.last["err_height"] = err_height
+        self.last["err_distance"] = err_distance
 
     def plot_analysis_result(self):
         if self.corners is not None:
