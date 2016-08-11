@@ -32,8 +32,8 @@ class DroneController:
         self.integral = {"err_x": 0, "err_height": 0, "err_distance": 0}
         self.last = {"err_x": 0, "err_height": 0, "err_distance": 0}
         self.control = {"x": 0, "height": 0, "distance": 0}
-        self.K = {"P": 1, "I": 1, "D": 1}
-        self.ref_height = 800  # [mm]
+        self.K = {"P": 1, "I": 5, "D": 1}
+        self.ref_height = 400  # [mm]
         self.height = 0  # [mm]
         self.drone.set_camera_view(True)
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
