@@ -70,12 +70,13 @@ class DroneController:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.loop_running = False
+                self.drone.halt()
             elif event.type == pygame.KEYUP:
                 self.drone.hover()
             elif event.type == pygame.KEYDOWN:
                 self.turn = 0
-                if event.key == pygame.K_ESCAPE:
-                    self.drone.reset()
+                if event.key in [pygame.K_BACKSPACE, pygame.K_ESCAPE]:
+                    self.drone.halt()
                     self.loop_running = False
                 # takeoff / land
                 elif event.key == pygame.K_RETURN:
@@ -84,8 +85,7 @@ class DroneController:
                 elif event.key == pygame.K_SPACE:
                     print("space")
                     self.drone.land()
-                # emergency
-                elif event.key in [pygame.K_BACKSPACE, pygame.K_ESCAPE]:
+                elif event.key == pygame.K_r:
                     self.drone.reset()
                 # activate program modes
                 elif event.key == pygame.K_t:
