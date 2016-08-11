@@ -230,14 +230,14 @@ class DroneController:
             cv.circle(self.img, self.center, 2, (0, 0, 255), 2)
 
     def print_intel(self):
-        font_color = (221, 96, 22)
+        font_color = (0, 0, 0)
         font_size = 0.5
-        font_weight = 1
+        font_weight = 1.5
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
         battery_text = "Battery level: {0:2.1f}%".format(self.battery_level)
         height_text = "Drone height: {0:d} mm".format(self.height)
-        marker_size_text = "Marker size: {0:.1f} px^2".format(self.marker_size)
+        marker_size_text = "Marker size: {0:.1f} x10^3 px^2".format(self.marker_size / 1000)
         cv.putText(self.img, battery_text, (5, 25), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
         cv.putText(self.img, height_text, (5, 55), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
-        cv.putText(self.img, marker_size_text, (5, 55), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
+        cv.putText(self.img, marker_size_text, (5, 85), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
 
