@@ -23,13 +23,16 @@ class DroneController:
         if self.use_webcam:
             self.cam = cv.VideoCapture(0)
         self.drone = lib_drone.ARDrone2(hd=True)
+        time.sleep(1)
         self.drone.set_camera_view(True)
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
+        self.marker_position = (0, 0)
         print "Battery level: {0:2.1f}%".format(self.battery_level)
 
         # Initialize pygame
         pygame.init()
         self.image_shape = self.drone.image_shape  # (720, 1280, 3) = (height, width, color_depth)
+        self.img_cv = np.array(1, 1, 3)
         self.screen = pygame.display.set_mode((self.image_shape[1], self.image_shape[0]))  # width, height
         self.img_numpy = np.zeros([self.image_shape[0], self.image_shape[1], self.image_shape[2]])
         self.img_manuals = pygame.image.load(os.path.join("media", "commands.png")).convert()
@@ -138,6 +141,8 @@ class DroneController:
     def analyze_image(self):
         pass
 
+    def highlight_marker(self):
+        pass
 
     def land(self):
         self.drone.land()
@@ -154,9 +159,9 @@ class DroneController:
         self.show_np_array(self.img_numpy, -90)
 
     def update_video_from_webcam(self):
-        ret, frame = self.cam.read()
-        frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-        self.img_numpy = np.asarray(frame)
+        ret, self.img_cv = self.cam.read()
+        self.img_cv = cv.cvtColor(self.img_cv, cv.COLOR_BGR2RGB)
+        self.img_numpy = np.asarray(self.img_cv)  # TODO: check, if this is needed
         self.show_np_array(self.img_numpy, -90)
 
     def show_np_array(self, array, rotate=0):
@@ -165,3 +170,6 @@ class DroneController:
         # print "Surface size: ", surface.get_size()
         self.screen.blit(surface, (0, 0))
         pygame.display.flip()
+
+    def pid_controller(self, pos, dt):
+        pos = (0, 0)
