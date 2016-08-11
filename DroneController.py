@@ -224,17 +224,6 @@ class DroneController:
             self.center = (-1, -1)
             self.marker_size = 0
 
-    def highlight_marker(self):
-        pass
-
-    def land(self):
-        self.drone.land()
-        self.flying = False
-
-    def take_off(self):
-        self.drone.takeoff()
-        self.flying = True
-
     def update_video_from_drone(self):
         self.img = self.drone.get_image()  # (360, 640, 3) or (720, 1280, 3)
         self.plot_analysis_result()
