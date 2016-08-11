@@ -27,10 +27,12 @@ class DroneController:
             self.cam = cv.VideoCapture(0)
         self.drone = lib_drone.ARDrone2(hd=True)
         time.sleep(1)
+        self.time = time.time()
+        self.ref_height = 5
+        self.height = 0
         self.drone.set_camera_view(True)
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
         self.marker_position = (0, 0)
-        print "Battery level: {0:2.1f}%".format(self.battery_level)
 
         # Initialize pygame
         pygame.init()
@@ -190,4 +192,13 @@ class DroneController:
     def plot_analysis_result(self):
         if self.corners is not None:
             self.img = aruco.drawDetectedMarkers(self.img, self.corners)
-            cv.circle(self.img, self.center, 2, (0, 0, 255), 2)
+            cv.circle(self.img, self.center, 2, (0, 0, 255), 2)            cv.circle(self.img, self.center, 2, (0, 0, 255), 2)
+    def print_intel(self):
+        font_color = (221, 96, 22)
+        font_size = 0.5
+        font_weight = 1
+        self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
+        battery_text = "Battery level: {0:2.1f}%".format(self.battery_level)
+        height_text = "Drone height: {0:d} mm".format(self.height)
+        cv.putText(self.img, battery_text, (5, 25), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
+        cv.putText(self.img, height_text, (5, 55), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
