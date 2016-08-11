@@ -37,6 +37,8 @@ class DroneController:
         # Initialize pygame
         pygame.init()
         self.image_shape = self.drone.image_shape  # (720, 1280, 3) = (height, width, color_depth)
+        self.marker_size = 0
+        self.ref_marker_size = 0  # TODO: set value
         self.img = np.array([1], ndmin=3)
         self.screen = pygame.display.set_mode((self.image_shape[1], self.image_shape[0]))  # width, height
         self.img_manuals = pygame.image.load(os.path.join("media", "commands.png")).convert()
@@ -149,15 +151,23 @@ class DroneController:
 
     def analyze_image(self):
         gray = cv.cvtColor(self.img, cv.COLOR_RGB2GRAY)
-        corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, self.aruco_dict, parameters=self.parameters)
-        if corners:
-            self.corners = corners
-            dim = corners[0][0].shape
-            c = np.sum(corners[0][0], axis=0) / dim[0]
+        all_corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, self.aruco_dict, parameters=self.parameters)
+        if all_corners:
+            self.corners = all_corners
+            corners = all_corners[0][0]
+            dim = corners.shape
+            c = np.sum(corners, axis=0) / dim[0]
             self.center = (c[0], c[1])
+            x1, y1 = corners[0][0], corners[0][1]
+            x2, y2 = corners[1][0], corners[1][1]
+            x3, y3 = corners[2][0], corners[2][1]
+            x4, y4 = corners[3][0], corners[3][1]
+            self.marker_size = abs((x3 - x1) * (y4 - y2) + (x4 - x2) * (y1 - y3)) / 2
+            # A = (1 / 2) | [(x3 - x1)(y4 - y2) + (x4 - x2)(y1 - y3)] |
         else:
             self.corners = None
             self.center = None
+            self.marker_size = 0
 
     def highlight_marker(self):
         pass
@@ -201,5 +211,8 @@ class DroneController:
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
         battery_text = "Battery level: {0:2.1f}%".format(self.battery_level)
         height_text = "Drone height: {0:d} mm".format(self.height)
+        marker_size_text = "Marker size: {0:.1f} px^2".format(self.marker_size)
         cv.putText(self.img, battery_text, (5, 25), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
         cv.putText(self.img, height_text, (5, 55), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
+        cv.putText(self.img, marker_size_text, (5, 55), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
+
