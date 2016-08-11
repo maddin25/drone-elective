@@ -255,7 +255,7 @@ class DroneController:
     def print_intel(self):
         font_color = (0, 0, 0)
         font_size = 0.5
-        font_weight = 1.5
+        font_weight = 2
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
         battery_text = "Battery level: {0:2.1f}%".format(self.battery_level)
         height_text = "Drone height: {0:d} mm".format(self.height)
