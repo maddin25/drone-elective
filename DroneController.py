@@ -59,6 +59,8 @@ class DroneController:
     def start_main_loop(self):
         print "Main loop started"
         while self.loop_running:
+            dt = time.time() - self.time
+            self.time = time.time()
             self.handle_key_stroke()
             if not self.use_webcam:
                 self.update_video_from_drone()
