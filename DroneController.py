@@ -69,7 +69,7 @@ class DroneController:
                 self.update_video_from_webcam()
             self.analyze_image()
             self.height = self.drone.navdata[0]['altitude']
-            if self.corners is not None:
+            if self.automatic_mode:
                 self.pid_controller(self.center, self.height, self.marker_size, dt)
             self.movement_routine()
             self.print_intel()
