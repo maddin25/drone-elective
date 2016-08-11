@@ -301,4 +301,4 @@ class DroneController:
         cv.putText(self.img, marker_size_text, (5, 85), font, font_size, font_color, font_weight)
         if self.automatic_mode:
             cv.putText(self.img, "AUTOMATIC MODE", (self.image_shape[1] / 2, 30), font, 1, (0, 255, 0), 2)
-            cv.putText(self.img, self.action, (round(self.image_shape[1] * .8), 30), font, 1, font_color, 2)
+            cv.putText(self.img, self.action, (int(round(self.image_shape[1] * .8)), 30), font, 1, font_color, 2)
