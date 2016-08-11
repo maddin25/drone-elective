@@ -58,6 +58,7 @@ class DroneController:
             else:
                 self.update_video_from_webcam()
             self.analyze_image()
+            self.refresh_img(self.img, -90)
 
         self.drone.halt()
 
@@ -172,15 +173,13 @@ class DroneController:
     def update_video_from_drone(self):
         self.img = self.drone.get_image()  # (360, 640, 3) or (720, 1280, 3)
         self.plot_analysis_result()
-        self.show_np_array(self.img, -90)
 
     def update_video_from_webcam(self):
         ret, self.img = self.cam.read()
         self.img = cv.cvtColor(self.img, cv.COLOR_BGR2RGB)
         self.plot_analysis_result()
-        self.show_np_array(self.img, -90)
 
-    def show_np_array(self, array, rotate=0):
+    def refresh_img(self, array, rotate=0):
         surface = pygame.surfarray.make_surface(array)
         surface = pygame.transform.rotate(surface, rotate)
         self.screen.blit(surface, (0, 0))
