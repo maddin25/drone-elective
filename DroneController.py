@@ -67,9 +67,18 @@ class DroneController:
             else:
                 self.update_video_from_webcam()
             self.analyze_image()
+            self.height = self.drone.navdata[0]['altitude']
+            self.pid_controller(self.center, self.height, self.marker_size, dt)
+            self.movement_routine()
+            self.print_intel()
             self.refresh_img(self.img, -90)
 
         self.drone.halt()
+
+    def movement_routine(self):
+        print "U_x:", self.control["x"]
+        print "U_height:", self.control["height"]
+        print "U_distance:", self.control["distance"]
 
     def set_cycle_time(self, new_cycle_time):
         assert new_cycle_time > 0
