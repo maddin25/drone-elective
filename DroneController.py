@@ -28,8 +28,8 @@ class DroneController:
         self.drone = lib_drone.ARDrone2(hd=True)
         time.sleep(1)
         self.time = time.time()
-        self.ref_height = 5
-        self.height = 0
+        self.ref_height = 800  # [mm]
+        self.height = 0  # [mm]
         self.drone.set_camera_view(True)
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
         self.marker_position = (0, 0)
