@@ -59,6 +59,8 @@ class DroneController:
         print "Main loop started"
         while self.loop_running:
             dt = time.time() - self.time
+            if dt < 0.05:
+                time.sleep(0.05 - dt)
             self.time = time.time()
             self.handle_key_stroke()
             if not self.use_webcam:
