@@ -37,7 +37,6 @@ class DroneController:
         self.height = 0  # [mm]
         self.drone.set_camera_view(True)
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
-        self.marker_position = (0, 0)
 
         # Initialize pygame
         pygame.init()
@@ -68,7 +67,8 @@ class DroneController:
                 self.update_video_from_webcam()
             self.analyze_image()
             self.height = self.drone.navdata[0]['altitude']
-            self.pid_controller(self.center, self.height, self.marker_size, dt)
+            if self.corners is not None:
+                self.pid_controller(self.center, self.height, self.marker_size, dt)
             self.movement_routine()
             self.print_intel()
             self.refresh_img(self.img, -90)
@@ -182,7 +182,7 @@ class DroneController:
             # A = (1 / 2) | [(x3 - x1)(y4 - y2) + (x4 - x2)(y1 - y3)] |
         else:
             self.corners = None
-            self.center = None
+            self.center = (-1, -1)
             self.marker_size = 0
 
     def highlight_marker(self):
