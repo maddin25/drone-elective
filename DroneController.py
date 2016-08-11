@@ -182,6 +182,7 @@ class DroneController:
     def refresh_img(self, array, rotate=0):
         surface = pygame.surfarray.make_surface(array)
         surface = pygame.transform.rotate(surface, rotate)
+        surface = pygame.transform.flip(surface, True, False)
         self.screen.blit(surface, (0, 0))
         pygame.display.flip()
 
