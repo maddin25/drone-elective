@@ -192,7 +192,8 @@ class DroneController:
     def plot_analysis_result(self):
         if self.corners is not None:
             self.img = aruco.drawDetectedMarkers(self.img, self.corners)
-            cv.circle(self.img, self.center, 2, (0, 0, 255), 2)            cv.circle(self.img, self.center, 2, (0, 0, 255), 2)
+            cv.circle(self.img, self.center, 2, (0, 0, 255), 2)
+
     def print_intel(self):
         font_color = (221, 96, 22)
         font_size = 0.5
