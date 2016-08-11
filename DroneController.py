@@ -33,7 +33,7 @@ class DroneController:
         self.last = {"err_x": 0, "err_height": 0, "err_distance": 0}
         self.control = {"x": 0, "height": 0, "distance": 0}
         self.K = {"P": 1, "I": 5, "D": 1}
-        self.ref_height = 400  # [mm]
+        self.ref_height = 600  # [mm]
         self.height = 0  # [mm]
         self.drone.set_camera_view(True)
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
@@ -78,9 +78,27 @@ class DroneController:
         self.drone.halt()
 
     def movement_routine(self):
-        print "U_x:", self.control["x"]
-        print "U_height:", self.control["height"]
-        print "U_distance:", self.control["distance"]
+        x_scale = 3
+        if self.automatic_mode:
+            pass
+            # print "Control for height:", self.control["height"]
+        if self.control["height"] > +300:
+            self.drone.move_down()
+        elif self.control["height"] < -300:
+            self.drone.move_up()
+        elif self.control["x"] > +1 * x_scale:
+            self.drone.move_right()
+        elif self.control["x"] > +3 * x_scale:
+            self.drone.turn_right()
+        elif self.control["x"] < -1 * x_scale:
+            self.drone.move_left()
+        elif self.control["x"] < -3 * x_scale:
+            self.drone.turn_left()
+        # elif self.control["distance"] > 1:
+        #     self.drone.move_forward()
+        elif self.automatic_mode:
+            print "Hovering"
+            self.drone.hover()
 
     def set_cycle_time(self, new_cycle_time):
         assert new_cycle_time > 0
@@ -271,4 +289,6 @@ class DroneController:
         cv.putText(self.img, battery_text, (5, 25), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
         cv.putText(self.img, height_text, (5, 55), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
         cv.putText(self.img, marker_size_text, (5, 85), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
+        if self.automatic_mode:
+            cv.putText(self.img, "AUTOMATIC MODE", (self.image_shape[1], 10), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
