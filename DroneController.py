@@ -47,7 +47,7 @@ class DroneController:
         pygame.init()
         self.image_shape = self.drone.image_shape  # (720, 1280, 3) = (height, width, color_depth)
         self.marker_size = 0
-        self.ref_marker_size = 100
+        self.ref_marker_size = 150
         self.img = np.array([1], ndmin=3)
         self.screen = pygame.display.set_mode((self.image_shape[1], self.image_shape[0]))  # width, height
         self.img_manuals = pygame.image.load(os.path.join("media", "commands.png")).convert()
