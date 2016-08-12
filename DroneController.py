@@ -82,24 +82,25 @@ class DroneController:
         if self.automatic_mode:
             pass
             # print "Control for height:", self.control["height"]
-        if self.control["height"] > +100:
+
+        if self.control["distance"] < -0:
+            self.drone.move_backward()
+            self.action = "Move backward"
+        elif self.control["height"] > +50:
             self.drone.move_down()
             self.action = "Move down"
-        elif self.control["height"] < -100:
+        elif self.control["height"] < -50:
             self.drone.move_up()
             self.action = "Move up"
-        elif self.control["x"] > +0.20:
+        elif self.control["x"] > +0.15:
             self.drone.turn_right()
             self.action = "Turn right"
-        elif self.control["x"] < -0.20:
+        elif self.control["x"] < -0.15:
             self.drone.turn_left()
             self.action = "Turn left"
         elif self.control["distance"] > +10:
             self.drone.move_forward()
             self.action = "Move forward"
-        elif self.control["distance"] < -10:
-            self.drone.move_backward()
-            self.action = "Move backward"
         elif self.control["x"] > +0.07:
             self.drone.move_right()
             self.action = "Move right"
