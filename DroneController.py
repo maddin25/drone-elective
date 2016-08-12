@@ -271,7 +271,7 @@ class DroneController:
         self.control["height"] = 1 * err_height
                                # + self.K["I"] * self.integral["err_height"] \
                                # + self.K["D"] * (err_height - self.last["err_height"])
-        self.control["distance"] = 2.0 / 1000.0 * err_distance
+        self.control["distance"] = 1.0 / 1000.0 * err_distance
                                  # + self.K["I"] * self.integral["err_distance"] \
                                  # + self.K["D"] * (err_distance - self.last["err_distance"])
         # Save values for the next iteration
