@@ -21,9 +21,10 @@ class DroneController:
     automatic_mode = False
     center = None
     corners = None
+    aruco_found = False
     lag_counter = 0
-    p_x = 1
-    p_y = 1
+    p_x = .8
+    p_y = .8
 
     def __init__(self, use_webcam=False):
         self.use_webcam = use_webcam
@@ -243,11 +244,15 @@ class DroneController:
             self.integral["err_x"] += err_x
             self.integral["err_y"] += err_y
             self.integral["err_distance"] += err_distance
-        elif self.lag_counter <= 2:
+            self.aruco_found = True
+        # No aruco marker has been found
+        elif self.lag_counter <= 2 and self.aruco_found:
             self.lag_counter += 1
             return
+        # Also no aruco marker was found for some time
         else:
             self.lag_counter = 0
+            self.aruco_found = False
             err_x = 0
             err_y = 0
             err_distance = 0
