@@ -139,6 +139,7 @@ class DroneController:
                 # activate program modes
                 elif event.key == pygame.K_t:
                     self.automatic_mode = not self.automatic_mode
+                    self.drone.speed = 0.1
                     print "Automatic mode enabled:", self.automatic_mode
                 elif self.automatic_mode:
                     continue
