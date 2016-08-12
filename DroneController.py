@@ -22,6 +22,8 @@ class DroneController:
     center = None
     corners = None
     lag_counter = 0
+    p_x = 1
+    p_y = 1
 
     def __init__(self, use_webcam=False):
         self.use_webcam = use_webcam
@@ -42,7 +44,7 @@ class DroneController:
         pygame.init()
         self.image_shape = self.drone.image_shape  # (720, 1280, 3) = (height, width, color_depth)
         self.marker_size = 0
-        self.ref_marker_size = math.sqrt(35000)  # TODO: set value
+        self.ref_marker_size = 100
         self.img = np.array([1], ndmin=3)
         self.screen = pygame.display.set_mode((self.image_shape[1], self.image_shape[0]))  # width, height
         self.img_manuals = pygame.image.load(os.path.join("media", "commands.png")).convert()
@@ -59,8 +61,8 @@ class DroneController:
         print "Main loop started"
         while self.loop_running:
             dt = time.time() - self.time
-            if dt < 0.05:
-                time.sleep(0.05 - dt)
+            if dt < 0.04:
+                time.sleep(0.04 - dt)
             self.time = time.time()
             self.handle_key_stroke()
             if not self.use_webcam:
@@ -127,7 +129,6 @@ class DroneController:
                 # activate program modes
                 elif event.key == pygame.K_t:
                     self.automatic_mode = not self.automatic_mode
-                    self.drone.speed = 0.1
                     print "Automatic mode enabled:", self.automatic_mode
                 elif self.automatic_mode:
                     continue
@@ -208,7 +209,7 @@ class DroneController:
             x3, y3 = corners[2][0], corners[2][1]
             x4, y4 = corners[3][0], corners[3][1]
             # A = (1 / 2) | [(x3 - x1)(y4 - y2) + (x4 - x2)(y1 - y3)] |
-            self.marker_size = abs((x3 - x1) * (y4 - y2) + (x4 - x2) * (y1 - y3)) / 2
+            self.marker_size = math.sqrt(abs((x3 - x1) * (y4 - y2) + (x4 - x2) * (y1 - y3)) / 2)
         else:
             self.corners = None
             self.center = (-1, -1)
@@ -237,7 +238,7 @@ class DroneController:
         if self.corners is not None:
             err_x = self.center[0] / self.image_shape[1] - 0.5
             err_y = self.center[1] / self.image_shape[0] - 0.5
-            err_distance = math.sqrt(self.marker_size) - self.ref_marker_size
+            err_distance = self.marker_size - self.ref_marker_size
             print "Marker Size:", self.marker_size, "Error distance", err_distance
             self.integral["err_x"] += err_x
             self.integral["err_y"] += err_y
@@ -256,14 +257,14 @@ class DroneController:
 
         # Calculate the integral parts
         # Calculate new control values
-        self.control["x"] = 5 * err_x
+        self.control["x"] = self.p_x * err_x
                           # + self.K["I"] * self.integral["err_x"] \
                           # + self.K["D"] * (err_x - self.last["err_x"])
-        self.control["y"] = 5 * err_y
+        self.control["y"] = self.p_y * err_y
         self.control["height"] = 1 * err_height
                                # + self.K["I"] * self.integral["err_height"] \
                                # + self.K["D"] * (err_height - self.last["err_height"])
-        self.control["distance"] = 3.0 / 1000.0 * err_distance
+        self.control["distance"] = 2.0 / 1000.0 * err_distance
                                  # + self.K["I"] * self.integral["err_distance"] \
                                  # + self.K["D"] * (err_distance - self.last["err_distance"])
         # Save values for the next iteration
