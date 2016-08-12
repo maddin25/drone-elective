@@ -86,12 +86,13 @@ class DroneController:
         self.action = "Default"
         if self.automatic_mode:
             pass
-        if self.control["x"] > +0.05 * (self.p_x + self.d_x):
-            self.drone.turn_right()
-            self.action = "Turn right"
-        elif self.control["x"] < -0.05 * (self.p_x + self.d_x):
-            self.drone.turn_left()
-            self.action = "Turn left"
+        if abs(self.control["x"]) > +0.05 * (self.p_x + self.d_x):
+            self.action = "3D rotation"
+            self.drone.at(lib_drone.at_pcmd, True,
+                          0,
+                          +self.control["distance"],
+                          -self.control["y"],
+                          +self.control["x"])
         elif self.corners is not None or self.lag_counter > 0:
             self.action = "3D adjustment"
             self.drone.at(lib_drone.at_pcmd, True,
