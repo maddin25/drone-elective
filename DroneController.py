@@ -23,8 +23,10 @@ class DroneController:
     corners = None
     aruco_found = False
     lag_counter = 0
-    p_x = .8
-    p_y = .8
+    p_x = 0.8
+    d_x = 0.9
+    p_y = 0.8
+    d_y = 0.9
 
     def __init__(self, use_webcam=False):
         self.use_webcam = use_webcam
@@ -84,10 +86,10 @@ class DroneController:
         self.action = "Default"
         if self.automatic_mode:
             pass
-        if self.control["x"] > +0.15 * self.p_x:
+        if self.control["x"] > +0.05 * (self.p_x + self.d_x):
             self.drone.turn_right()
             self.action = "Turn right"
-        elif self.control["x"] < -0.15 * self.p_x:
+        elif self.control["x"] < -0.05 * (self.p_x + self.d_x):
             self.drone.turn_left()
             self.action = "Turn left"
         elif self.corners is not None or self.lag_counter > 0:
@@ -240,7 +242,6 @@ class DroneController:
             err_x = self.center[0] / self.image_shape[1] - 0.5
             err_y = self.center[1] / self.image_shape[0] - 0.5
             err_distance = self.marker_size - self.ref_marker_size
-            print "Marker Size:", self.marker_size, "Error distance", err_distance
             self.integral["err_x"] += err_x
             self.integral["err_y"] += err_y
             self.integral["err_distance"] += err_distance
@@ -262,10 +263,11 @@ class DroneController:
 
         # Calculate the integral parts
         # Calculate new control values
-        self.control["x"] = self.p_x * err_x
-                          # + self.K["I"] * self.integral["err_x"] \
+        self.control["x"] = self.p_x * err_x \
+                            + self.d_x * (err_x - self.last["err_x"])
                           # + self.K["D"] * (err_x - self.last["err_x"])
-        self.control["y"] = self.p_y * err_y
+        self.control["y"] = self.p_y * err_y \
+                            + self.d_y * (err_y - self.last["err_y"])
         self.control["height"] = 1 * err_height
                                # + self.K["I"] * self.integral["err_height"] \
                                # + self.K["D"] * (err_height - self.last["err_height"])
