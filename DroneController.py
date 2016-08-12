@@ -21,6 +21,7 @@ class DroneController:
     automatic_mode = False
     center = None
     corners = None
+    lag_counter = 0
 
     def __init__(self, use_webcam=False):
         self.use_webcam = use_webcam
@@ -249,7 +250,11 @@ class DroneController:
             err_distance = marker_size - self.ref_marker_size
             self.integral["err_x"] += err_x
             self.integral["err_distance"] += err_distance
+        elif self.lag_counter <= 1:
+            self.lag_counter += 1
+            return
         else:
+            self.lag_counter = 0
             err_x = 0
             err_distance = 0
             self.integral["err_x"] *= 0.9
