@@ -21,6 +21,12 @@ class DroneController:
     automatic_mode = False
     center = None
     corners = None
+    aruco_found = False
+    lag_counter = 0
+    p_x = 0.8
+    d_x = 0.9
+    p_y = 0.8
+    d_y = 0.9
 
     def __init__(self, use_webcam=False):
         self.use_webcam = use_webcam
@@ -29,11 +35,10 @@ class DroneController:
         self.drone = lib_drone.ARDrone2(hd=True)
         time.sleep(1)
         self.time = time.time()
-        self.integral = {"err_x": 0, "err_height": 0, "err_distance": 0}
-        self.last = {"err_x": 0, "err_height": 0, "err_distance": 0}
-        self.control = {"x": 0, "height": 0, "distance": 0}
-        self.K = {"P": 1, "I": 5, "D": 1}
-        self.ref_height = 600  # [mm]
+        self.integral = {"err_x": 0, "err_y": 0, "err_height": 0, "err_distance": 0}
+        self.last = {"err_x": 0, "err_y":0, "err_height": 0, "err_distance": 0}
+        self.control = {"x": 0, "y":0, "height": 0, "distance": 0}
+        self.ref_height = 800  # [mm]
         self.height = 0  # [mm]
         self.drone.set_camera_view(True)
         self.battery_level = self.drone.navdata.get(0, dict()).get('battery', 0)
@@ -42,7 +47,7 @@ class DroneController:
         pygame.init()
         self.image_shape = self.drone.image_shape  # (720, 1280, 3) = (height, width, color_depth)
         self.marker_size = 0
-        self.ref_marker_size = math.sqrt(35000)  # TODO: set value
+        self.ref_marker_size = 150
         self.img = np.array([1], ndmin=3)
         self.screen = pygame.display.set_mode((self.image_shape[1], self.image_shape[0]))  # width, height
         self.img_manuals = pygame.image.load(os.path.join("media", "commands.png")).convert()
@@ -59,8 +64,8 @@ class DroneController:
         print "Main loop started"
         while self.loop_running:
             dt = time.time() - self.time
-            if dt < 0.05:
-                time.sleep(0.05 - dt)
+            if dt < 0.04:
+                time.sleep(0.04 - dt)
             self.time = time.time()
             self.handle_key_stroke()
             if not self.use_webcam:
@@ -70,7 +75,7 @@ class DroneController:
             self.analyze_image()
             self.height = self.drone.navdata[0]['altitude']
             if self.automatic_mode:
-                self.pid_controller(self.center, self.height, self.marker_size, dt)
+                self.pid_controller(dt)
             self.movement_routine()
             self.print_intel()
             self.refresh_img(self.img, -90)
@@ -78,26 +83,25 @@ class DroneController:
         self.drone.halt()
 
     def movement_routine(self):
-        x_scale = 3
+        self.action = "Default"
         if self.automatic_mode:
             pass
-            # print "Control for height:", self.control["height"]
-        if self.control["height"] > +300:
-            self.drone.move_down()
-        elif self.control["height"] < -300:
-            self.drone.move_up()
-        elif self.control["x"] > +1 * x_scale:
-            self.drone.move_right()
-        elif self.control["x"] > +3 * x_scale:
-            self.drone.turn_right()
-        elif self.control["x"] < -1 * x_scale:
-            self.drone.move_left()
-        elif self.control["x"] < -3 * x_scale:
-            self.drone.turn_left()
-        # elif self.control["distance"] > 1:
-        #     self.drone.move_forward()
+        if abs(self.control["x"]) > +0.05 * (self.p_x + self.d_x):
+            self.action = "3D rotation"
+            self.drone.at(lib_drone.at_pcmd, True,
+                          0,
+                          +self.control["distance"],
+                          -self.control["y"],
+                          +self.control["x"])
+        elif self.corners is not None or self.lag_counter > 0:
+            self.action = "3D adjustment"
+            self.drone.at(lib_drone.at_pcmd, True,
+                    +self.control["x"],
+                    +self.control["distance"],
+                    -self.control["y"],
+                    0)
         elif self.automatic_mode:
-            print "Hovering"
+            self.action = "Hovering"
             self.drone.hover()
 
     def set_cycle_time(self, new_cycle_time):
@@ -208,23 +212,12 @@ class DroneController:
             x2, y2 = corners[1][0], corners[1][1]
             x3, y3 = corners[2][0], corners[2][1]
             x4, y4 = corners[3][0], corners[3][1]
-            self.marker_size = abs((x3 - x1) * (y4 - y2) + (x4 - x2) * (y1 - y3)) / 2
             # A = (1 / 2) | [(x3 - x1)(y4 - y2) + (x4 - x2)(y1 - y3)] |
+            self.marker_size = math.sqrt(abs((x3 - x1) * (y4 - y2) + (x4 - x2) * (y1 - y3)) / 2)
         else:
             self.corners = None
             self.center = (-1, -1)
             self.marker_size = 0
-
-    def highlight_marker(self):
-        pass
-
-    def land(self):
-        self.drone.land()
-        self.flying = False
-
-    def take_off(self):
-        self.drone.takeoff()
-        self.flying = True
 
     def update_video_from_drone(self):
         self.img = self.drone.get_image()  # (360, 640, 3) or (720, 1280, 3)
@@ -242,34 +235,49 @@ class DroneController:
         self.screen.blit(surface, (0, 0))
         pygame.display.flip()
 
-    def pid_controller(self, marker_center, height, marker_size, dt):
-        err_height = height - self.ref_height
+    def pid_controller(self, dt):
+        err_height = self.height - self.ref_height
         self.integral["err_height"] += err_height / 40
 
         if self.corners is not None:
-            err_x = marker_center[0] / self.image_shape[1] - 0.5
-            err_distance = marker_size - self.ref_marker_size
+            err_x = self.center[0] / self.image_shape[1] - 0.5
+            err_y = self.center[1] / self.image_shape[0] - 0.5
+            err_distance = self.marker_size - self.ref_marker_size
             self.integral["err_x"] += err_x
+            self.integral["err_y"] += err_y
             self.integral["err_distance"] += err_distance
+            self.aruco_found = True
+        # No aruco marker has been found
+        elif self.lag_counter <= 2 and self.aruco_found:
+            self.lag_counter += 1
+            return
+        # Also no aruco marker was found for some time
         else:
+            self.lag_counter = 0
+            self.aruco_found = False
             err_x = 0
+            err_y = 0
             err_distance = 0
             self.integral["err_x"] *= 0.9
+            self.integral["err_y"] *= 0.9
             self.integral["err_distance"] *= 0.9
 
         # Calculate the integral parts
         # Calculate new control values
-        self.control["x"] = self.K["P"] / 2 * err_x \
-                          + self.K["I"] * self.integral["err_x"] \
-                          + self.K["D"] * (err_x - self.last["err_x"])
-        self.control["height"] = self.K["P"] * err_height \
-                               + self.K["I"] * self.integral["err_height"] \
-                               + self.K["D"] * (err_height - self.last["err_height"])
-        self.control["distance"] = self.K["P"] * err_distance \
-                                 + self.K["I"] * self.integral["err_distance"] \
-                                 + self.K["D"] * (err_distance - self.last["err_distance"])
+        self.control["x"] = self.p_x * err_x \
+                            + self.d_x * (err_x - self.last["err_x"])
+                          # + self.K["D"] * (err_x - self.last["err_x"])
+        self.control["y"] = self.p_y * err_y \
+                            + self.d_y * (err_y - self.last["err_y"])
+        self.control["height"] = 1 * err_height
+                               # + self.K["I"] * self.integral["err_height"] \
+                               # + self.K["D"] * (err_height - self.last["err_height"])
+        self.control["distance"] = 1.0 / 1000.0 * err_distance
+                                 # + self.K["I"] * self.integral["err_distance"] \
+                                 # + self.K["D"] * (err_distance - self.last["err_distance"])
         # Save values for the next iteration
         self.last["err_x"] = err_x
+        self.last["err_y"] = err_y
         self.last["err_height"] = err_height
         self.last["err_distance"] = err_distance
 
@@ -279,6 +287,7 @@ class DroneController:
             cv.circle(self.img, self.center, 2, (0, 0, 255), 2)
 
     def print_intel(self):
+        font = cv.FONT_HERSHEY_SIMPLEX
         font_color = (0, 0, 0)
         font_size = 0.5
         font_weight = 2
@@ -286,9 +295,18 @@ class DroneController:
         battery_text = "Battery level: {0:2.1f}%".format(self.battery_level)
         height_text = "Drone height: {0:d} mm".format(self.height)
         marker_size_text = "Marker size: {0:.1f} x10^3 px^2".format(self.marker_size / 1000)
-        cv.putText(self.img, battery_text, (5, 25), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
-        cv.putText(self.img, height_text, (5, 55), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
-        cv.putText(self.img, marker_size_text, (5, 85), cv.FONT_HERSHEY_SIMPLEX, font_size, font_color, font_weight)
+        control_text_x = "dx = {0:.2f}".format(self.control["x"])
+        control_text_y = "dy = {0:.2f}".format(self.control["y"])
+        control_text_distance = "distance = {0:f}".format(self.control["distance"])
+        cv.putText(self.img, battery_text, (5, 25), font, font_size, font_color, font_weight)
+        cv.putText(self.img, height_text, (5, 55), font, font_size, font_color, font_weight)
+        cv.putText(self.img, marker_size_text, (5, 85), font, font_size, font_color, font_weight)
         if self.automatic_mode:
-            cv.putText(self.img, "AUTOMATIC MODE", (self.image_shape[1], 10), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            cv.putText(self.img, "AUTOMATIC MODE", (int(round(self.image_shape[1] * .4)), 30), font, 1, (0, 255, 0), 2)
+            cv.putText(self.img, self.action, (int(round(self.image_shape[1] * .7)), 30), font, 1, font_color, 2)
+            cv.putText(self.img, control_text_x, (int(round(self.image_shape[1] * .7)), 55), font, 1, font_color, 2)
+            cv.putText(self.img, control_text_y, (int(round(self.image_shape[1] * .7)), 80), font, 1, font_color, 2)
+            cv.putText(self.img, control_text_distance, (int(round(self.image_shape[1] * .7)), 105), font, 1, font_color, 2)
+
+
 
